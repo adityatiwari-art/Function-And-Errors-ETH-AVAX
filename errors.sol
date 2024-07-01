@@ -1,28 +1,49 @@
-
 // SPDX-License-Identifier: MIT
-// compiler version must be greater than or equal to 0.8.17 and less than 0.9.0
 pragma solidity ^0.8.26;
 
-contract Errors {
-    uint public stateVar=1;
-    
-    function _Require(address _add,uint _amount) public{
-        require(_add==msg.sender,"Sorry! this address is not authorised for furthur process");
-        require(_amount>100,"Insufficient balance");
-        stateVar++;
+contract SimpleBank {
+    mapping(address => uint256) private balances;
+    address public owner;
+
+    constructor() {
+        owner = msg.sender;
     }
-    
-    function _Revert(address _add) public{
-        stateVar++;
-        if(_add!=msg.sender){
-            revert("Unauthorised address");
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only the owner can call this function.");
+        _;
+    }
+
+    function deposit() public payable {
+        require(msg.value > 0, "Deposit amount must be greater than zero.");
+        balances[msg.sender] += msg.value;
+        assert(balances[msg.sender] >= msg.value);
+    }
+
+    function withdraw(uint256 _amount) public {
+        require(_amount <= balances[msg.sender], "Insufficient balance.");
+        balances[msg.sender] -= _amount;
+        payable(msg.sender).transfer(_amount);
+        assert(balances[msg.sender] >= 0);
+    }
+
+    function transfer(address _to, uint256 _amount) public {
+        require(_to != address(0), "Invalid recipient address.");
+        require(_amount <= balances[msg.sender], "Insufficient balance.");
+        balances[msg.sender] -= _amount;
+        balances[_to] += _amount;
+        assert(balances[_to] >= _amount);
+    }
+
+    function emergencyWithdraw() public onlyOwner {
+        if (address(this).balance > 0) {
+            revert("Emergency withdrawal is not allowed when contract has balance.");
         }
-
-    }
-    
-    function _Assert(address _add) public payable{
-        stateVar++;
-        assert(_add==msg.sender);
+        payable(owner).transfer(address(this).balance);
     }
 
+    function getBalance(address _account) public view returns (uint256) {
+        return balances[_account];
+    }
 }
+
