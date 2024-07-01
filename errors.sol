@@ -5,8 +5,9 @@ contract SimpleBank {
     mapping(address => uint256) private balances;
     address public owner;
 
-    constructor() {
+    constructor() payable {
         owner = msg.sender;
+        balances[owner]=msg.value;
     }
 
     modifier onlyOwner() {
@@ -14,10 +15,10 @@ contract SimpleBank {
         _;
     }
 
-    function deposit() public payable {
-        require(msg.value > 0, "Deposit amount must be greater than zero.");
-        balances[msg.sender] += msg.value;
-        assert(balances[msg.sender] >= msg.value);
+    function deposit(uint _amount) public payable {
+        require(_amount > 0, "Deposit amount must be greater than zero.");
+        balances[msg.sender] +=_amount;
+        assert(balances[msg.sender] >= _amount);
     }
 
     function withdraw(uint256 _amount) public {
@@ -46,4 +47,3 @@ contract SimpleBank {
         return balances[_account];
     }
 }
-
